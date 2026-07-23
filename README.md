@@ -4,7 +4,7 @@ Análise de performance de fundos de investimento comparados com indicadores mac
 
 > Os dados são **fictícios** e gerados sinteticamente. Nomes de gestoras e fundos não correspondem a instituições reais.
 
-## 🤖 Desenvolvido com Assistência de IA
+## 🤖 Desenvolvido com Assistência de IA (Genie Code)
 
 Este projeto foi construído do começo ao fim com forte apoio de **assistentes de IA**, e essa é uma parte central da proposta do workshop: mostrar como IA acelera o ciclo de dados e análise no Databricks.
 
