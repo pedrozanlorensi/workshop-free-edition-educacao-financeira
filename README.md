@@ -8,15 +8,17 @@ Análise de performance de fundos de investimento comparados com indicadores mac
 
 Este projeto foi construído do começo ao fim com forte apoio de **assistentes de IA**, e essa é uma parte central da proposta do workshop: mostrar como IA acelera o ciclo de dados e análise no Databricks.
 
+Boa parte do desenvolvimento se apoiou no **Genie Code**, o assistente de código de IA do Databricks integrado ao workspace (a evolução do antigo Databricks Assistant). Como ele conhece o contexto do Unity Catalog — tabelas, colunas e linhagem — as sugestões chegam já cientes do esquema dos dados.
+
 A IA foi usada em praticamente todas as etapas:
 
-- **Geração de dados sintéticos** — os scripts em `scripts/` foram escritos com IA para produzir séries plausíveis: SELIC em regime com cortes graduais, CDI derivado da SELIC, inflação em torno da meta e fundos de renda fixa atrelados ao CDI. A IA também ajudou a *validar* a modelagem (por exemplo, medindo a correlação renda fixa × CDI e corrigindo o gerador quando ela não fazia sentido).
-- **Escrita dos notebooks** — transformações em PySpark, cálculo de rendimentos, acumulados e as visualizações em matplotlib/seaborn foram desenvolvidas com o **Databricks Assistant** e outros assistentes de código.
-- **Depuração** — a IA diagnosticou um problema de ordem de execução no notebook de análise (células que usavam DataFrames definidos mais adiante) e reordenou o notebook para rodar de ponta a ponta.
+- **Geração de dados sintéticos** — o código que produz as séries plausíveis (SELIC em regime com cortes graduais, CDI derivado da SELIC, inflação em torno da meta e fundos de renda fixa atrelados ao CDI) foi escrito com IA. Ela também ajudou a *validar* a modelagem (por exemplo, medindo a correlação renda fixa × CDI e corrigindo o gerador quando ela não fazia sentido).
+- **Escrita dos notebooks** — as transformações em PySpark, o cálculo de rendimentos, os acumulados e as visualizações em matplotlib/seaborn foram desenvolvidas com o **Genie Code** no editor de notebooks (`Cmd+I` / `Ctrl+I`), usando o contexto das tabelas do Unity Catalog.
+- **Depuração** — o **Genie Code** ajudou a diagnosticar um problema de ordem de execução no notebook de análise (células que usavam DataFrames definidos mais adiante) e a reordenar o notebook para rodar de ponta a ponta.
 - **Dashboard** — a estrutura de datasets, KPIs e filtros do dashboard AI/BI foi desenhada com apoio de IA.
 - **Documentação** — este README e a documentação do projeto foram redigidos com IA.
 
-> **Dica para o workshop:** experimente reproduzir cada etapa pedindo ao Databricks Assistant. O objetivo não é copiar o código pronto, e sim praticar o diálogo com a IA — descrever a intenção, revisar o que ela sugere e validar os resultados.
+> **Dica para o workshop:** experimente reproduzir cada etapa conversando com o **Genie Code** dentro do notebook (`Cmd+I` / `Ctrl+I`). O objetivo não é copiar o código pronto, e sim praticar o diálogo com a IA — descrever a intenção, revisar o que ela sugere e validar os resultados. Como o Genie Code enxerga o esquema do Unity Catalog, vale pedir coisas como "calcule o rendimento mensal por fundo a partir de `quotas_fundos`" e observar como ele já usa as colunas certas.
 
 ## 📁 Estrutura do Repositório
 
@@ -32,11 +34,8 @@ A IA foi usada em praticamente todas as etapas:
 ├── dados/                          # dados fictícios em CSV
 │   ├── quotas_fundos.csv           # cotas diárias por fundo (2000–2026)
 │   └── indicadores_macro.csv       # inflação, CDI e SELIC mensais
-├── dashboard/                      # definição do dashboard AI/BI
-│   └── Analise de Fundos de Investimento.lvdash.json
-└── scripts/                        # geradores dos dados sintéticos
-    ├── gerar_macro.py              # gera dados/indicadores_macro.csv
-    └── gerar_fundos.py             # gera dados/quotas_fundos.csv (usa o macro)
+└── dashboard/                      # definição do dashboard AI/BI
+    └── Analise de Fundos de Investimento.lvdash.json
 ```
 
 ## 🗄️ Tabelas Unity Catalog
@@ -97,13 +96,6 @@ Ordem de execução: **1 → 2 → 4 → 3**.
 2. Suba os CSVs de `dados/` para um volume (ex.: `/Volumes/workspace/default/arquivos/`).
 3. Execute os notebooks na ordem **1 → 2 → 4 → 3** (ou `Run all` em cada um).
 4. Importe `dashboard/Analise de Fundos de Investimento.lvdash.json` como dashboard AI/BI. Ele lê as tabelas ao vivo e reflete os dados automaticamente.
-
-### Regenerar os dados fictícios
-```bash
-pip install numpy pandas
-python scripts/gerar_macro.py     # gera dados/indicadores_macro.csv
-python scripts/gerar_fundos.py    # gera dados/quotas_fundos.csv (depende do macro)
-```
 
 ## 🧪 Modelagem dos Dados Fictícios
 
