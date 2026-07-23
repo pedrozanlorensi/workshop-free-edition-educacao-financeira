@@ -1,0 +1,893 @@
+{
+  "datasets": [
+    {
+      "name": "kpis_gerais",
+      "displayName": "KPIs Gerais",
+      "queryLines": [
+        "SELECT\n",
+        "  r.nome_fundo,\n",
+        "  r.tipo_fundo,\n",
+        "  r.gestora,\n",
+        "  r.ano,\n",
+        "  r.mes,\n",
+        "  COUNT(DISTINCT r.nome_fundo) as total_fundos,\n",
+        "  ROUND(AVG(r.rendimento_mensal_pct), 2) as rendimento_medio_pct,\n",
+        "  ROUND(\n",
+        "    AVG(\n",
+        "      CASE\n",
+        "        WHEN r.rendimento_mensal_pct > i.cdi_mensal_pct THEN 1.0\n",
+        "        ELSE 0.0\n",
+        "      END\n",
+        "    )\n",
+        "      * 100,\n",
+        "    1\n",
+        "  ) as pct_bateu_cdi,\n",
+        "  ROUND(\n",
+        "    AVG(\n",
+        "      CASE\n",
+        "        WHEN r.rendimento_mensal_pct > i.inflacao_mensal_pct THEN 1.0\n",
+        "        ELSE 0.0\n",
+        "      END\n",
+        "    )\n",
+        "      * 100,\n",
+        "    1\n",
+        "  ) as pct_bateu_inflacao\n",
+        "FROM\n",
+        "  workspace.default.rendimento_mensal_fundos r\n",
+        "    INNER JOIN workspace.default.indicadores_macro i\n",
+        "      ON YEAR(i.mes_referencia) = r.ano\n",
+        "      AND MONTH(i.mes_referencia) = r.mes\n",
+        "WHERE\n",
+        "  r.rendimento_mensal_pct IS NOT NULL\n",
+        "GROUP BY\n",
+        "  r.nome_fundo,\n",
+        "  r.tipo_fundo,\n",
+        "  r.gestora,\n",
+        "  r.ano,\n",
+        "  r.mes"
+      ]
+    },
+    {
+      "name": "filtros",
+      "displayName": "Dados para Filtros",
+      "queryLines": [
+        "SELECT DISTINCT\n",
+        "  tipo_fundo,\n",
+        "  gestora,\n",
+        "  ano,\n",
+        "  mes,\n",
+        "  nome_fundo\n",
+        "FROM\n",
+        "  workspace.default.rendimento_mensal_fundos\n",
+        "ORDER BY\n",
+        "  tipo_fundo,\n",
+        "  gestora,\n",
+        "  ano,\n",
+        "  mes,\n",
+        "  nome_fundo"
+      ]
+    },
+    {
+      "name": "performance_tipo",
+      "displayName": "Performance por Tipo",
+      "queryLines": [
+        "SELECT\n",
+        "  r.tipo_fundo,\n",
+        "  r.nome_fundo,\n",
+        "  r.gestora,\n",
+        "  r.ano,\n",
+        "  r.mes,\n",
+        "  ROUND(AVG(r.rendimento_mensal_pct), 2) as rendimento_medio_pct,\n",
+        "  ROUND(AVG(i.cdi_mensal_pct), 2) as cdi_medio_pct,\n",
+        "  COUNT(DISTINCT r.nome_fundo) as qtd_fundos\n",
+        "FROM\n",
+        "  workspace.default.rendimento_mensal_fundos r\n",
+        "    INNER JOIN workspace.default.indicadores_macro i\n",
+        "      ON YEAR(i.mes_referencia) = r.ano\n",
+        "      AND MONTH(i.mes_referencia) = r.mes\n",
+        "WHERE\n",
+        "  r.rendimento_mensal_pct IS NOT NULL\n",
+        "GROUP BY\n",
+        "  r.tipo_fundo,\n",
+        "  r.nome_fundo,\n",
+        "  r.gestora,\n",
+        "  r.ano,\n",
+        "  r.mes\n",
+        "ORDER BY\n",
+        "  rendimento_medio_pct DESC"
+      ]
+    },
+    {
+      "name": "sazonalidade",
+      "displayName": "Sazonalidade Mensal",
+      "queryLines": [
+        "SELECT\n",
+        "  r.mes,\n",
+        "  r.tipo_fundo,\n",
+        "  r.nome_fundo,\n",
+        "  r.gestora,\n",
+        "  r.ano,\n",
+        "  ROUND(AVG(r.rendimento_mensal_pct), 2) as rendimento_medio_pct\n",
+        "FROM\n",
+        "  workspace.default.rendimento_mensal_fundos r\n",
+        "WHERE\n",
+        "  r.rendimento_mensal_pct IS NOT NULL\n",
+        "GROUP BY\n",
+        "  r.mes,\n",
+        "  r.tipo_fundo,\n",
+        "  r.nome_fundo,\n",
+        "  r.gestora,\n",
+        "  r.ano\n",
+        "ORDER BY\n",
+        "  r.mes,\n",
+        "  r.tipo_fundo"
+      ]
+    },
+    {
+      "name": "ranking_fundos",
+      "displayName": "Ranking de Fundos",
+      "queryLines": [
+        "SELECT\n",
+        "  r.nome_fundo,\n",
+        "  r.gestora,\n",
+        "  r.tipo_fundo,\n",
+        "  ROUND(AVG(r.rendimento_mensal_pct), 2) as rendimento_medio_mensal_pct,\n",
+        "  ROUND(AVG(i.cdi_mensal_pct), 2) as cdi_medio_pct,\n",
+        "  ROUND(AVG(r.rendimento_mensal_pct - i.cdi_mensal_pct), 2) as excesso_vs_cdi_pct\n",
+        "FROM\n",
+        "  workspace.default.rendimento_mensal_fundos r\n",
+        "    INNER JOIN workspace.default.indicadores_macro i\n",
+        "      ON YEAR(i.mes_referencia) = r.ano\n",
+        "      AND MONTH(i.mes_referencia) = r.mes\n",
+        "WHERE\n",
+        "  r.rendimento_mensal_pct IS NOT NULL\n",
+        "GROUP BY\n",
+        "  r.nome_fundo,\n",
+        "  r.gestora,\n",
+        "  r.tipo_fundo\n",
+        "ORDER BY\n",
+        "  excesso_vs_cdi_pct DESC\n",
+        "LIMIT 20"
+      ]
+    },
+    {
+      "name": "evolucao_comparativo",
+      "displayName": "Evolução Temporal Comparativa",
+      "queryLines": [
+        "SELECT\n",
+        "  data_referencia,\n",
+        "  'Rendimento Médio Fundos' as indicador,\n",
+        "  rendimento_medio_fundos as valor_pct\n",
+        "FROM\n",
+        "  (\n",
+        "    SELECT\n",
+        "      CONCAT(r.ano, '-', LPAD(r.mes, 2, '0'), '-01') as data_referencia,\n",
+        "      ROUND(AVG(r.rendimento_mensal_pct), 2) as rendimento_medio_fundos\n",
+        "    FROM\n",
+        "      workspace.default.rendimento_mensal_fundos r\n",
+        "    WHERE\n",
+        "      r.rendimento_mensal_pct IS NOT NULL\n",
+        "    GROUP BY\n",
+        "      r.ano,\n",
+        "      r.mes\n",
+        "  )\n",
+        "UNION ALL\n",
+        "SELECT\n",
+        "  CONCAT(YEAR(mes_referencia), '-', LPAD(MONTH(mes_referencia), 2, '0'), '-01') as data_referencia,\n",
+        "  'CDI' as indicador,\n",
+        "  ROUND(cdi_mensal_pct, 2) as valor_pct\n",
+        "FROM\n",
+        "  workspace.default.indicadores_macro\n",
+        "UNION ALL\n",
+        "SELECT\n",
+        "  CONCAT(YEAR(mes_referencia), '-', LPAD(MONTH(mes_referencia), 2, '0'), '-01') as data_referencia,\n",
+        "  'Inflação' as indicador,\n",
+        "  ROUND(inflacao_mensal_pct, 2) as valor_pct\n",
+        "FROM\n",
+        "  workspace.default.indicadores_macro\n",
+        "ORDER BY\n",
+        "  data_referencia,\n",
+        "  indicador"
+      ]
+    },
+    {
+      "name": "evolucao_temporal",
+      "displayName": "Evolução Temporal de Rendimentos",
+      "queryLines": [
+        "WITH acumulados_fundo AS (\n",
+        "  SELECT\n",
+        "    rf.nome_fundo,\n",
+        "    rf.tipo_fundo,\n",
+        "    rf.gestora,\n",
+        "    rf.ano,\n",
+        "    rf.mes,\n",
+        "    im.mes_referencia,\n",
+        "    -- Rendimento composto acumulado por fundo\n",
+        "    (\n",
+        "      EXP(\n",
+        "        SUM(LN(1 + rf.rendimento_mensal_pct / 100)) OVER (\n",
+        "            PARTITION BY rf.nome_fundo\n",
+        "            ORDER BY rf.ano, rf.mes\n",
+        "            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW\n",
+        "          )\n",
+        "      )\n",
+        "        - 1\n",
+        "    )\n",
+        "      * 100 AS rendimento_acumulado_pct\n",
+        "  FROM\n",
+        "    workspace.default.rendimento_mensal_fundos rf\n",
+        "      JOIN workspace.default.indicadores_macro_acumulados im\n",
+        "        ON rf.ano = YEAR(im.mes_referencia)\n",
+        "        AND rf.mes = MONTH(im.mes_referencia)\n",
+        "  WHERE\n",
+        "    rf.rendimento_mensal_pct IS NOT NULL\n",
+        "    AND rf.rendimento_mensal_pct > -100 -- evita LN de números negativos\n",
+        ")\n",
+        "-- Linhas dos fundos (filtrável)\n",
+        "SELECT\n",
+        "  af.mes_referencia,\n",
+        "  af.nome_fundo,\n",
+        "  af.tipo_fundo,\n",
+        "  af.gestora,\n",
+        "  af.ano,\n",
+        "  af.mes,\n",
+        "  af.nome_fundo AS serie,\n",
+        "  af.rendimento_acumulado_pct AS valor_acumulado\n",
+        "FROM\n",
+        "  acumulados_fundo af\n",
+        "UNION ALL\n",
+        "-- CDI Acumulado (sempre aparece)\n",
+        "SELECT\n",
+        "DISTINCT\n",
+        "  im.mes_referencia,\n",
+        "  '🔷 CDI Acumulado' AS nome_fundo,\n",
+        "  'Benchmark' AS tipo_fundo,\n",
+        "  'Benchmark' AS gestora,\n",
+        "  YEAR(im.mes_referencia) AS ano,\n",
+        "  MONTH(im.mes_referencia) AS mes,\n",
+        "  '🔷 CDI Acumulado' AS serie,\n",
+        "  im.cdi_acumulado_pct AS valor_acumulado\n",
+        "FROM\n",
+        "  workspace.default.indicadores_macro_acumulados im\n",
+        "UNION ALL\n",
+        "-- Inflação Acumulada (sempre aparece)\n",
+        "SELECT\n",
+        "DISTINCT\n",
+        "  im.mes_referencia,\n",
+        "  '🔶 Inflação Acumulada' AS nome_fundo,\n",
+        "  'Benchmark' AS tipo_fundo,\n",
+        "  'Benchmark' AS gestora,\n",
+        "  YEAR(im.mes_referencia) AS ano,\n",
+        "  MONTH(im.mes_referencia) AS mes,\n",
+        "  '🔶 Inflação Acumulada' AS serie,\n",
+        "  im.inflacao_acumulada_pct AS valor_acumulado\n",
+        "FROM\n",
+        "  workspace.default.indicadores_macro_acumulados im\n",
+        "ORDER BY\n",
+        "  mes_referencia,\n",
+        "  serie"
+      ]
+    },
+    {
+      "name": "fundos_gestora_v2",
+      "displayName": "Fundos por Gestora V2",
+      "queryLines": [
+        "SELECT\n",
+        "  gestora,\n",
+        "  tipo_fundo,\n",
+        "  COUNT(DISTINCT nome_fundo) as quantidade_fundos\n",
+        "FROM\n",
+        "  workspace.default.rendimento_mensal_fundos\n",
+        "GROUP BY\n",
+        "  gestora,\n",
+        "  tipo_fundo\n",
+        "ORDER BY\n",
+        "  quantidade_fundos DESC\n",
+        "LIMIT 15"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "abab23eb",
+      "displayName": "Visão Geral",
+      "layout": [
+        {
+          "widget": {
+            "name": "kpi_total_fundos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpis_gerais",
+                  "fields": [
+                    {
+                      "name": "sum(total_fundos)",
+                      "expression": "SUM(`total_fundos`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Total de Fundos",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(total_fundos)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "evolucao_temporal",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "evolucao_temporal",
+                  "fields": [
+                    {
+                      "name": "serie",
+                      "expression": "`serie`"
+                    },
+                    {
+                      "name": "mes_referencia",
+                      "expression": "`mes_referencia`"
+                    },
+                    {
+                      "name": "avg(valor_acumulado)",
+                      "expression": "AVG(`valor_acumulado`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "title": "Evolução Temporal: Rendimento vs CDI vs Inflação",
+                "showTitle": true
+              },
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "mes_referencia",
+                  "displayName": "Período",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(valor_acumulado)",
+                  "displayName": "Rendimento Acumulado (%)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "serie",
+                  "displayName": "Série",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 12,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_rendimento_medio",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpis_gerais",
+                  "fields": [
+                    {
+                      "name": "avg(rendimento_medio_pct)",
+                      "expression": "AVG(`rendimento_medio_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Rendimento Médio Mensal (%)",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(rendimento_medio_pct)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 4,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "ranking_fundos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ranking_fundos",
+                  "fields": [
+                    {
+                      "name": "nome_fundo",
+                      "expression": "`nome_fundo`"
+                    },
+                    {
+                      "name": "gestora",
+                      "expression": "`gestora`"
+                    },
+                    {
+                      "name": "tipo_fundo",
+                      "expression": "`tipo_fundo`"
+                    },
+                    {
+                      "name": "rendimento_medio_mensal_pct",
+                      "expression": "`rendimento_medio_mensal_pct`"
+                    },
+                    {
+                      "name": "excesso_vs_cdi_pct",
+                      "expression": "`excesso_vs_cdi_pct`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Top 20 Fundos por Excesso sobre CDI",
+                "showTitle": true
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "nome_fundo"
+                  },
+                  {
+                    "fieldName": "gestora"
+                  },
+                  {
+                    "fieldName": "tipo_fundo"
+                  },
+                  {
+                    "fieldName": "rendimento_medio_mensal_pct"
+                  },
+                  {
+                    "fieldName": "excesso_vs_cdi_pct"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 12,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_bateu_cdi",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpis_gerais",
+                  "fields": [
+                    {
+                      "name": "avg(pct_bateu_cdi)",
+                      "expression": "AVG(`pct_bateu_cdi`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "% Fundos Acima do CDI",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(pct_bateu_cdi)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 4,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_bateu_inflacao",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpis_gerais",
+                  "fields": [
+                    {
+                      "name": "avg(pct_bateu_inflacao)",
+                      "expression": "AVG(`pct_bateu_inflacao`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "% Fundos Acima da Inflação",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(pct_bateu_inflacao)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 4,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "sazonalidade",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "sazonalidade",
+                  "fields": [
+                    {
+                      "name": "tipo_fundo",
+                      "expression": "`tipo_fundo`"
+                    },
+                    {
+                      "name": "mes",
+                      "expression": "`mes`"
+                    },
+                    {
+                      "name": "avg(rendimento_medio_pct)",
+                      "expression": "AVG(`rendimento_medio_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "title": "Sazonalidade: Rendimento Médio por Mês do Ano",
+                "showTitle": true
+              },
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "mes",
+                  "displayName": "Mês",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(rendimento_medio_pct)",
+                  "displayName": "Rendimento Médio (%)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "tipo_fundo",
+                  "displayName": "Tipo de Fundo",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 23,
+            "width": 12,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "filtro_tipo_fundo",
+            "queries": [
+              {
+                "name": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186a4e21a17e28fcc8a8db57adabb_tipo_fundo",
+                "query": {
+                  "datasetName": "filtros",
+                  "fields": [
+                    {
+                      "name": "tipo_fundo",
+                      "expression": "`tipo_fundo`"
+                    },
+                    {
+                      "name": "tipo_fundo_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186ac02861e519a0b6a40f1f14eb6_tipo_fundo",
+                "query": {
+                  "datasetName": "evolucao_temporal",
+                  "fields": [
+                    {
+                      "name": "tipo_fundo",
+                      "expression": "`tipo_fundo`"
+                    },
+                    {
+                      "name": "tipo_fundo_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Tipo de Fundo",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "tipo_fundo",
+                    "queryName": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186a4e21a17e28fcc8a8db57adabb_tipo_fundo"
+                  },
+                  {
+                    "fieldName": "tipo_fundo",
+                    "queryName": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186ac02861e519a0b6a40f1f14eb6_tipo_fundo"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filtro_gestora",
+            "queries": [
+              {
+                "name": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186a4e21a17e28fcc8a8db57adabb_gestora",
+                "query": {
+                  "datasetName": "filtros",
+                  "fields": [
+                    {
+                      "name": "gestora",
+                      "expression": "`gestora`"
+                    },
+                    {
+                      "name": "gestora_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186ac02861e519a0b6a40f1f14eb6_gestora",
+                "query": {
+                  "datasetName": "evolucao_temporal",
+                  "fields": [
+                    {
+                      "name": "gestora",
+                      "expression": "`gestora`"
+                    },
+                    {
+                      "name": "gestora_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Gestora",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "gestora",
+                    "queryName": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186a4e21a17e28fcc8a8db57adabb_gestora"
+                  },
+                  {
+                    "fieldName": "gestora",
+                    "queryName": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186ac02861e519a0b6a40f1f14eb6_gestora"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filtro_nome_fundo",
+            "queries": [
+              {
+                "name": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186a4e21a17e28fcc8a8db57adabb_nome_fundo",
+                "query": {
+                  "datasetName": "filtros",
+                  "fields": [
+                    {
+                      "name": "nome_fundo",
+                      "expression": "`nome_fundo`"
+                    },
+                    {
+                      "name": "nome_fundo_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186ac02861e519a0b6a40f1f14eb6_serie",
+                "query": {
+                  "datasetName": "evolucao_temporal",
+                  "fields": [
+                    {
+                      "name": "serie",
+                      "expression": "`serie`"
+                    },
+                    {
+                      "name": "serie_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Fundo",
+                "showTitle": true
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "nome_fundo",
+                    "queryName": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186a4e21a17e28fcc8a8db57adabb_nome_fundo"
+                  },
+                  {
+                    "fieldName": "serie",
+                    "queryName": "dashboards/01f186a26af51f08ab4a4bf4a4d67f5c/datasets/01f186ac02861e519a0b6a40f1f14eb6_serie"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 12,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "global_filters",
+      "displayName": "Global Filters",
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
